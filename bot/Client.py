@@ -81,46 +81,45 @@ class Request:
 			yield self.body
 		
 		yield b'\x00\x00\xff\xff'
-
 class Response:
-	def __init__(self, payload:bytes, encoding:str="utf-8") -> None:
-		self.raw_header, self.raw_body = payload.split(b"\r\n\r\n")
-		self.header = {}
-		self.body = {}
+    def __init__(self, payload: bytes, encoding: str = "utf-8") -> None:
+        self.raw_header, self.raw_body = payload.split(b"\r\n\r\n", encoding=encoding)
+        self.header = {}
+        self.body = {}
 
-		for row in self.raw_header.decode(encoding).split("\r\n"):
-			row_split_list = list(map(lambda x: x.strip(), row.split(":")))
-			self.header[row_split_list[0]] = ":".join(row_split_list[1:]) or None
+        for row in self.raw_header.decode(encoding).split("\r\n"):
+            row_split_list = list(map(lambda x: x.strip(), row.split(":")))
+            self.header[row_split_list[0]] = ":".join(row_split_list[1:]) or None
 
-		for row in self.raw_body.decode(encoding).split("\r\n"):
-			row_split_list = list(map(lambda x: x.strip(), row.split(":")))
-			self.body[row_split_list[0]] = ":".join(row_split_list[1:]) or None
-		
+        for row in self.raw_body.decode(encoding).split("\r\n"):
+            row_split_list = list(map(lambda x: x.strip(), row.split(":")))
+            self.body[row_split_list[0]] = ":".join(row_split_list[1:]) or None
 
-		self._direct = self.header["method"] == "DIRECT"
-		self._connect = self.header["method"] == "CONNECT"
+        self._direct = self.header["method"] == "DIRECT"
+        self._connect = self.header["method"] == "CONNECT"
 
-	def __str__(self):
-		return f"Request(header={self.header}, body={self.body})"
-	
-	def __repr__(self):
-		return self.__str__()
+    def __str__(self):
+        return f"Request(header={self.header}, body={self.body})"
 
-	@property
-	def auth(self):
-		return self.header.get("authorization")
-	
-	@property
-	def cmd(self):
-		return self.body.get("cmd")
+    def __repr__(self):
+        return self.__str__()
 
-	@property
-	def params(self):
-		return self.body.get("params")
+    @property
+    def auth(self):
+        return self.header.get("authorization")
 
-	@property
-	def ack(self):
-		return self.body.get("ack")
+    @property
+    def cmd(self):
+        return self.body.get("cmd")
+
+    @property
+    def params(self):
+        return self.body.get("params")
+
+    @property
+    def ack(self):
+        return self.body.get("ack")
+
 
 
 
