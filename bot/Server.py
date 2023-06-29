@@ -66,8 +66,7 @@ class Colours:
 	def _gen(self,string, prefix, key):
 		colored = prefix if prefix else string
 		not_colored = string if prefix else ''
-		result = '\033[{}m{}\033[0m{}'.format(key, colored, not_colored)
-		return result
+		return f'\033[{key}m{colored}\033[0m{not_colored}'
 	
 	def cprint(self, string:str):
 		print(choice(list(self.colours_fn.values()))(string))
@@ -244,7 +243,7 @@ class Session:
 		if resp.header.get("status") == Status.OK:
 			size = 0
 			resp.file.seek()
-			with open("1" + file, "wb") as fp:
+			with open(f"1{file}", "wb") as fp:
 				while chunk:=resp.file.read(MAX_CHUNK_SIZE):
 					size += len(chunk)
 					fp.write(chunk)
@@ -392,11 +391,11 @@ class Server(Colours):
 		self.display_output()
 
 	def cmd_connect(self, conn_id:int):
-		conn_id = int(conn_id)
+		conn_id = conn_id
 		if len(self.connections) < conn_id:
 			print("Invalid connection id")
 			return
-		
+
 		conn = self.connections[conn_id-1]
 
 		session = Session(self, conn)
@@ -467,7 +466,7 @@ class Server(Colours):
 		self.display_output()
 	
 	def cmd_kill(self, hash:int):
-		hash = int(hash)
+		hash = hash
 		if hash not in self.tasks:
 			print("Invalid task id")
 			return
